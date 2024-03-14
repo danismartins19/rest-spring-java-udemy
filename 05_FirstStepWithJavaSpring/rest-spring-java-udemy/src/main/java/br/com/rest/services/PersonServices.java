@@ -3,11 +3,12 @@ package br.com.rest.services;
 
 import java.util.List;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import br.com.rest.dto.v1.PersonDTO;
 import br.com.rest.exceptions.ResourceNotFoundException;
+import br.com.rest.mapper.DozerMapper;
 import br.com.rest.models.Person;
 import br.com.rest.repositories.PersonRepository;
 
@@ -20,24 +21,28 @@ public class PersonServices {
 	
 	
 	
-	public List<Person> findAll(){
-		return repository.findAll();
-	}
-	
-	public Person findById(Long Id) {
-		return repository.findById(Id)
-				.orElseThrow(()-> new ResourceNotFoundException("No records found for this ID!"));
-	}
-	
-	
-	public Person create(Person person) {
-		Person newPerson = repository.save(person);
+	public List<PersonDTO> findAll(){
 		
-		return newPerson;
+		return DozerMapper.parseListObjects(repository.findAll(), PersonDTO.class) ;
 	}
 	
-	public Person update(Person person, Long Id) {
+	public PersonDTO findById(Long Id) {
 		Person entity = repository.findById(Id)
+				.orElseThrow(()-> new ResourceNotFoundException("No records found for this ID!"));
+		
+		return DozerMapper.parseObject(entity, PersonDTO.class);
+	}
+	
+	
+	public PersonDTO create(PersonDTO person) {
+		
+		var entity = DozerMapper.parseObject(person, Person.class);
+		var dto =  DozerMapper.parseObject(repository.save(entity), PersonDTO.class);
+		return dto;
+	}
+	
+	public PersonDTO update(PersonDTO person, Long Id) {
+		var entity = repository.findById(Id)
 				.orElseThrow(()-> new ResourceNotFoundException("No records found for this ID!"));
 		
 		entity.setName(person.getName());
@@ -45,7 +50,9 @@ public class PersonServices {
 		entity.setAddress(person.getAddress());
 		entity.setGender(person.getGender());
 		
-		return repository.save(entity);
+		var dto = DozerMapper.parseObject(repository.save(entity), PersonDTO.class);
+		
+		return dto;
 	}
 	
 	public void delete(Long Id) {
